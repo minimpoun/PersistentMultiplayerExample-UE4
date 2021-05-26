@@ -22,5 +22,20 @@
 * SOFTWARE.
 **/
 
-#include "Async/Async_GetCharacter.h"
+#pragma once
+
+#include "CoreMinimal.h"
+#include "GameFramework/GameModeBase.h"
+#include "MBaseGameMode.generated.h"
+
+UCLASS(minimalapi)
+class AMultiplayerExampleGameMode : public AGameModeBase
+{
+	GENERATED_BODY()
+
+public:
+	AMultiplayerExampleGameMode();
+};
+
+
 
