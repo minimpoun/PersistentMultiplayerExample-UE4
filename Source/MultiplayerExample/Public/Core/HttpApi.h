@@ -26,11 +26,322 @@
 
 #include "CoreMinimal.h"
 #include "Subsystems/GameInstanceSubsystem.h"
+#include "HttpModule.h"
+#include "Engine/EngineTypes.h"
+#include "JsonObjectConverter.h"
 #include "HttpApi.generated.h"
 
-UCLASS()
-class MULTIPLAYEREXAMPLE_API UHttpApi : public UGameInstanceSubsystem
+UENUM()
+enum class EContentType : uint8
+{
+	urlencoded,
+	json,
+	text,
+};
+
+
+USTRUCT()
+struct FRoute
 {
 	GENERATED_BODY()
-	
+
+	FRoute()
+	{
+		API = "bad route";
+		Login = "bad route";
+	}
+
+	FRoute(const FString InAPI, const FString InLogin)
+		: API(InAPI)
+		, Login(InLogin)
+	{}
+
+	FString GetAPIRoute() const { return API; }
+	FString GetLoginRoute() const { return Login; }
+
+private:
+
+	UPROPERTY()
+	FString API;
+
+	UPROPERTY()
+	FString Login;
 };
+
+UCLASS()
+class URequest : public UObject
+{
+	GENERATED_BODY()
+
+public:
+
+	URequest();
+	virtual ~URequest() override;
+	enum EVerb
+	{
+		POST,
+		GET,
+		DELETE,
+		HEAD,
+		PUT,
+	};
+
+	void SetRequestName(const FName& Name);
+	FORCEINLINE FName GetRequestName() const { return RequestName; }
+
+	void SetVerb(EVerb Verb) const;
+	void SetURL(const FString& URL) const;
+	void SetContent(const FString& Content) const;
+	void SetHeader(const FString& HeaderName, const FString& HeaderValue) const;
+	void ProcessRequest() const;
+	EHttpRequestStatus::Type GetStatus() const;
+	TArray<FString> GetHeaders() const;
+	FHttpResponsePtr GetResponse() const;
+	float GetElapsedTime() const;
+	void CancelRequest() const;
+
+	bool IsComplete() const;
+
+	bool IsValid() const;
+
+	FHttpRequestCompleteDelegate& OnProcessRequestComplete() const;
+	FHttpRequestProgressDelegate& OnRequestProgress() const;
+	FHttpRequestHeaderReceivedDelegate& OnHeaderReceived() const;
+
+private:
+
+	friend class UHttpAPI;
+
+	static FString GetVerbString(EVerb InVerb);
+	TSharedRef<IHttpRequest, ESPMode::ThreadSafe> Request = FHttpModule::Get().CreateRequest();
+
+	UPROPERTY()
+	FName RequestName;
+
+	UPROPERTY()
+	bool bResponseHandled;
+};
+
+USTRUCT()
+struct FAuthToken
+{
+	GENERATED_BODY()
+
+	FAuthToken() = default;
+	FAuthToken(const FString& InToken) : Token(InToken) {}
+
+	FORCEINLINE bool IsValid() const { return !Token.IsEmpty() && GetToken().Len() > 7; }
+	FORCEINLINE FString GetToken() const { return "Bearer " + Token; }
+
+protected:
+
+	UPROPERTY()
+	FString Token;
+};
+
+UCLASS()
+class MULTIPLAYEREXAMPLE_API UHttpAPI : public UGameInstanceSubsystem
+{
+	GENERATED_BODY()
+
+public:
+
+	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
+	virtual void Deinitialize() override;
+
+	UPROPERTY()
+	float UpdateFreq = 15.f;
+
+	URequest* CreateNewRequest(const FString& Subroute, bool bExplicitURL = false);
+	URequest* CreateLoginRequest();
+
+	void SetHeaders(URequest* InRequest) const;
+	static void SetHeaders(URequest* InRequest, EContentType ContentType);
+
+	static void SetAuthHeader(URequest* InRequest, const FAuthToken& Hash);
+
+	/*
+	 *	Will clear a request by name.
+	 *	WARNING: This does NOT go off of the UID. This will clear ALL requests with this name
+	 **/
+	void ClearRequest(const FName& RequestName);
+
+	/*
+	 *	Will clear the specific request
+	 **/
+	void ClearRequest(URequest* Request);
+
+	void ClearAllRequests();
+
+	static bool ValidateResponse(FHttpResponsePtr Response);
+
+	static void BindLambdaResponse(URequest* InRequest, TFunction<void(FHttpRequestPtr, FHttpResponsePtr, bool)> LambdaFunctor);
+
+	template<typename ClassType>
+	void BindUFunctionResponse(URequest* InRequest, ClassType* InClass, const FName& FuncName);
+
+	template<typename ContentType>
+	void POST(URequest* InRequest, const ContentType& Payload);
+
+	template<typename ContentType>
+	void POST(URequest* InRequest, const ContentType* Payload);
+
+	template<typename ContentType>
+	void POST(URequest* InRequest, ContentType Payload);
+
+	template<typename ContentType>
+	void DELETE(URequest* InRequest, const ContentType& Payload);
+
+	template<typename ContentType>
+	void DELETE(URequest* InRequest, const ContentType* Payload);
+
+	template<typename ContentType>
+	void DELETE(URequest* InRequest, ContentType Payload);
+
+	static void GET(URequest* InRequest);
+
+	template<typename ContentType>
+	static ContentType ToStruct(const FString& FromString);
+
+	template<typename ContentType>
+	static FString FromStruct(const ContentType& FromStruct);
+
+	static void DebugRequest(const URequest* InRequest);
+
+	UFUNCTION(BlueprintCallable)
+	void DebugAllRequests();
+
+	static void DebugResponse(const FHttpResponsePtr Response);
+
+	/*
+	 *	Returns an array of all requests that match the name
+	 *	Can lead to false positives if the request is cleared before ActiveRequests is updated
+	 **/
+	TArray<URequest*> FindRequest(const FName& RequestName);
+
+	/*
+	 *	Will attempt to see if a request matching RequestName is currently active
+	 *	Can lead to false positives if the request is cleared before ActiveRequests is updated
+	 **/
+	bool RequestExists(const FName& RequestName);
+
+protected:
+	static bool IsValidSubroute(const FString& In);
+	void UpdateActiveRequests();
+
+	static void POSTImpl(URequest* InRequest, const FString& Payload);
+	static void DELETEImpl(URequest* InRequest, const FString& Payload);
+
+	static void ProcessRequest(URequest* const InRequest);
+
+	static FString GetContentType(EContentType C);
+
+private:
+
+	UPROPERTY()
+	TArray<URequest*> ActiveRequests;
+
+	UPROPERTY()
+	FRoute Route;
+
+	UPROPERTY()
+	FTimerHandle RequestUpdate_TimerHandle;
+};
+
+
+template<typename ClassType>
+void UHttpAPI::BindUFunctionResponse(URequest* InRequest, ClassType* InClass, const FName& FuncName)
+{
+	if (InRequest && InClass)
+	{
+		InRequest->OnProcessRequestComplete().BindUFunction(InClass, FuncName);
+		InRequest->bResponseHandled = true;
+	}
+}
+
+template<typename ContentType>
+void UHttpAPI::POST(URequest* InRequest, const ContentType& Payload)
+{
+	if (InRequest)
+	{
+		POSTImpl(InRequest, FromStruct<ContentType>(Payload));
+	}
+}
+
+template<typename ContentType>
+void UHttpAPI::POST(URequest* InRequest, const ContentType* Payload)
+{
+	if (InRequest)
+	{
+		POSTImpl(InRequest, FromStruct<ContentType>(*Payload));
+	}
+}
+
+template<typename ContentType>
+void UHttpAPI::POST(URequest* InRequest, ContentType Payload)
+{
+	if (InRequest)
+	{
+		POSTImpl(InRequest, FromStruct<ContentType>(Payload));
+	}
+}
+
+template<typename ContentType>
+void UHttpAPI::DELETE(URequest* InRequest, const ContentType& Payload)
+{
+	if (InRequest)
+	{
+		DELETEImpl(InRequest, FromStruct<ContentType>(Payload));
+	}
+}
+
+template<typename ContentType>
+void UHttpAPI::DELETE(URequest* InRequest, const ContentType* Payload)
+{
+	if (InRequest)
+	{
+		DELETEImpl(InRequest, FromStruct<ContentType>(*Payload));
+	}
+}
+
+template<typename ContentType>
+void UHttpAPI::DELETE(URequest* InRequest, ContentType Payload)
+{
+	if (InRequest)
+	{
+		DELETEImpl(InRequest, FromStruct<ContentType>(Payload));
+	}
+}
+
+template<typename ContentType>
+ContentType UHttpAPI::ToStruct(const FString& FromString)
+{
+	if (!FromString.IsEmpty())
+	{
+		ContentType Out;
+		if (!FJsonObjectConverter::JsonObjectStringToUStruct(FromString, &Out, 0, 0))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Failed to convert %s to a USTRUCT. Make sure the struct contains the require properties."), *FromString);
+			return Out;
+		}
+
+		return Out;
+	}
+
+
+	UE_LOG(LogTemp, Warning, TEXT("The FromString was empty"));
+	return ContentType();
+}
+
+template<typename ContentType>
+FString UHttpAPI::FromStruct(const ContentType& FromStruct)
+{
+	FString Out;
+	if (!FJsonObjectConverter::UStructToJsonObjectString(FromStruct, Out))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Failed to convert a struct into a string"));
+		return TEXT("");
+	}
+
+	return Out;
+}
