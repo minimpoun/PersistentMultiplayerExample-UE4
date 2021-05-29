@@ -24,43 +24,74 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
-#include "GameFramework/Character.h"
-#include "MPlayerCharacter.generated.h"
+#include "ApiTypes.generated.h"
 
-UCLASS(config=Game)
-class AMultiplayerExampleCharacter : public ACharacter
+USTRUCT(BlueprintType)
+struct FLoginResponse
 {
 	GENERATED_BODY()
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
-	class USpringArmComponent* CameraBoom;
+	FLoginResponse()
+	{
+		Kind = "";
+		LocalID = "";
+		Email = "";
+		DisplayName = "";
+		IdToken = "";
+		Registered = false;
+		RefreshToken = "";
+		ExpiresIn = -1;
+	}
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
-	class UCameraComponent* FollowCamera;
+	FORCEINLINE bool IsValid() const { return !Email.IsEmpty() && !IdToken.IsEmpty() && Registered && !RefreshToken.IsEmpty(); }
 
-public:
+	UPROPERTY()
+	FString Kind;
+
+	UPROPERTY(BlueprintReadOnly)
+	FString LocalID;
+
+	UPROPERTY(BlueprintReadOnly)
+	FString Email;
+
+	UPROPERTY(BlueprintReadOnly)
+	FString DisplayName;
+
+	UPROPERTY(BlueprintReadOnly)
+	FString IdToken;
+
+	UPROPERTY()
+	bool Registered;
 	
-	AMultiplayerExampleCharacter();
+	UPROPERTY()
+	FString RefreshToken;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
-	float BaseTurnRate;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
-	float BaseLookUpRate;
-
-	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
-	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
-
-protected:
-	
-	void MoveForward(float Value);
-	void MoveRight(float Value);
-	void TurnAtRate(float Rate);
-	void LookUpAtRate(float Rate);
-
-	// APawn interface
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-	// End of APawn interface
+	UPROPERTY()
+	int32 ExpiresIn;
 };
 
+USTRUCT(BlueprintType)
+struct FUserCredentials
+{
+	GENERATED_BODY()
+
+public:
+
+	FUserCredentials(){}
+
+	FUserCredentials(FString NewID, FString NewPass)
+		: Email(NewID)
+		, Password(NewPass)
+	{}
+
+	FORCEINLINE bool IsValid() const { return !Email.IsEmpty() && !Password.IsEmpty(); }
+
+	UPROPERTY(BlueprintReadWrite)
+	FString Email;
+
+	UPROPERTY(BlueprintReadWrite)
+	FString Password;
+
+	UPROPERTY()
+	bool ReturnSecureToken = true;
+};

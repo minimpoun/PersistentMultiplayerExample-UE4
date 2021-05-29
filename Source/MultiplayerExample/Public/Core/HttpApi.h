@@ -178,7 +178,7 @@ public:
 	static void BindLambdaResponse(URequest* InRequest, TFunction<void(FHttpRequestPtr, FHttpResponsePtr, bool)> LambdaFunctor);
 
 	template<typename ClassType>
-	void BindUFunctionResponse(URequest* InRequest, ClassType* InClass, const FName& FuncName);
+	static void BindUFunctionResponse(URequest* InRequest, ClassType* InClass, const FName& FuncName);
 
 	template<typename ContentType>
 	void POST(URequest* InRequest, const ContentType& Payload);
@@ -226,6 +226,7 @@ public:
 	bool RequestExists(const FName& RequestName);
 
 protected:
+	
 	static bool IsValidSubroute(const FString& In);
 	void UpdateActiveRequests();
 
@@ -237,7 +238,7 @@ protected:
 	static FString GetContentType(EContentType C);
 
 private:
-
+	
 	UPROPERTY()
 	TArray<URequest*> ActiveRequests;
 

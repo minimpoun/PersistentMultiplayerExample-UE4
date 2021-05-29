@@ -24,3 +24,66 @@
 
 #include "Async/Async_Login.h"
 
+#include "JsonObjectConverter.h"
+#include "Core/HttpApi.h"
+#include "Core/MGameInstance.h"
+#include "Interfaces/IHttpRequest.h"
+#include "Interfaces/IHttpResponse.h"
+
+UAsync_Login* UAsync_Login::WaitGoogleLogin(UMGameInstance* InGI, const FUserCredentials& InUserCredentials)
+{
+	UAsync_Login* Node = NewObject<UAsync_Login>();
+	Node->GameInstance = InGI;
+	Node->UserCredentials = InUserCredentials;
+	return Node;
+}
+
+void UAsync_Login::Activate()
+{
+	if (UserCredentials.IsValid() && !GameInstance->HasValidToken())
+	{
+		if (UHttpAPI* API = GameInstance->GetSubsystem<UHttpAPI>())
+		{
+			URequest* Request = API->CreateLoginRequest();
+			if (Request->GetStatus() != EHttpRequestStatus::Processing)
+			{
+				API->SetHeaders(Request);
+				API->POST<FUserCredentials>(Request, &UserCredentials);
+				if (GameInstance->IsDebugMode())
+				{
+					API->DebugRequest(Request);
+				}
+				
+				API->BindLambdaResponse(Request, [&](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSuccess)
+				{
+					if (API->ValidateResponse(Response))
+					{
+						FString Json = Response->GetContentAsString();
+						FLoginResponse NewCredentials;
+						if (!FJsonObjectConverter::JsonObjectStringToUStruct<FLoginResponse>(Json, &NewCredentials, 0, 0))
+						{
+							this->Error = Json;
+							bSuccess = false;
+						}
+						
+						if (GameInstance->IsDebugMode())
+						{
+							UE_LOG(LogTemp, Display, TEXT("UAsync_Login: %s success %d"), *Json, bSuccess);
+						}
+						
+						LoginResponse = NewCredentials;
+						GameInstance->SetNewToken(NewCredentials);
+					}
+
+					this->bSuccessful = bSuccess;
+					ExecuteLogin();
+				});
+			}
+		}
+	}
+}
+
+void UAsync_Login::ExecuteLogin() const
+{
+	OnLoginComplete.Broadcast(bSuccessful, LoginResponse, Error);
+}

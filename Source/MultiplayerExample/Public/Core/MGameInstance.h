@@ -24,43 +24,35 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
-#include "GameFramework/Character.h"
-#include "MPlayerCharacter.generated.h"
+#include "Engine/GameInstance.h"
+#include "Types/ApiTypes.h"
+#include "MGameInstance.generated.h"
 
-UCLASS(config=Game)
-class AMultiplayerExampleCharacter : public ACharacter
+UCLASS()
+class UMGameInstance : public UGameInstance
 {
 	GENERATED_BODY()
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
-	class USpringArmComponent* CameraBoom;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
-	class UCameraComponent* FollowCamera;
-
 public:
+
+	UMGameInstance();
+
+	UFUNCTION(BlueprintPure)
+	bool IsDebugMode() const;
+
+	UFUNCTION(BlueprintCallable)
+	void SetDebugModeEnabled(const bool& bNewDebug);
 	
-	AMultiplayerExampleCharacter();
+	UFUNCTION(BlueprintPure)
+	FORCEINLINE bool HasValidToken() const { return LoginToken.IsValid(); }
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
-	float BaseTurnRate;
+	FORCEINLINE void SetNewToken(const FLoginResponse NewToken) { LoginToken = NewToken; }
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
-	float BaseLookUpRate;
+private:
 
-	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
-	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
+	UPROPERTY(Transient)
+	FLoginResponse LoginToken;
 
-protected:
-	
-	void MoveForward(float Value);
-	void MoveRight(float Value);
-	void TurnAtRate(float Rate);
-	void LookUpAtRate(float Rate);
-
-	// APawn interface
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-	// End of APawn interface
+	UPROPERTY(Transient)
+	uint8 bDebugEnabled:1;
 };
-

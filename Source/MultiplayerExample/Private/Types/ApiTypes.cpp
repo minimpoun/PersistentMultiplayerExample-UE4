@@ -21,51 +21,5 @@
 * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 * SOFTWARE.
 **/
-#pragma once
 
-#include "CoreMinimal.h"
-#include "Kismet/BlueprintAsyncActionBase.h"
 #include "Types/ApiTypes.h"
-#include "Async_Login.generated.h"
-
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnLoginComplete, bool, bSuccess, FLoginResponse, LoginResponse, FString, Error);
-
-class UMGameInstance;
-
-UCLASS()
-class MULTIPLAYEREXAMPLE_API UAsync_Login : public UBlueprintAsyncActionBase
-{
-	GENERATED_BODY()
-
-public:
-
-	UPROPERTY(BlueprintAssignable)
-	FOnLoginComplete OnLoginComplete;
-
-	UFUNCTION(BlueprintCallable, meta = (BlueprintInternalUseOnly = true))
-	static UAsync_Login* WaitGoogleLogin(UMGameInstance* InGI, const FUserCredentials& InUserCredentials);
-
-	virtual void Activate() override;
-
-protected:
-
-	UFUNCTION()
-	void ExecuteLogin() const;
-
-private:
-	
-	UPROPERTY()
-	UMGameInstance* GameInstance;
-
-	UPROPERTY()
-	FUserCredentials UserCredentials;
-
-	UPROPERTY()
-	bool bSuccessful;
-
-	UPROPERTY()
-	FString Error;
-
-	UPROPERTY()
-	FLoginResponse LoginResponse;
-};

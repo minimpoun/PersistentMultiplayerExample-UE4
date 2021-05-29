@@ -21,51 +21,23 @@
 * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 * SOFTWARE.
 **/
-#pragma once
 
-#include "CoreMinimal.h"
-#include "Kismet/BlueprintAsyncActionBase.h"
-#include "Types/ApiTypes.h"
-#include "Async_Login.generated.h"
+#include "Core/MGameInstance.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnLoginComplete, bool, bSuccess, FLoginResponse, LoginResponse, FString, Error);
-
-class UMGameInstance;
-
-UCLASS()
-class MULTIPLAYEREXAMPLE_API UAsync_Login : public UBlueprintAsyncActionBase
+UMGameInstance::UMGameInstance()
 {
-	GENERATED_BODY()
+}
 
-public:
+bool UMGameInstance::IsDebugMode() const
+{
+#if UE_EDITOR || UE_BUILD_DEBUG
+	return bDebugEnabled;
+#else
+	return false;
+#endif
+}
 
-	UPROPERTY(BlueprintAssignable)
-	FOnLoginComplete OnLoginComplete;
-
-	UFUNCTION(BlueprintCallable, meta = (BlueprintInternalUseOnly = true))
-	static UAsync_Login* WaitGoogleLogin(UMGameInstance* InGI, const FUserCredentials& InUserCredentials);
-
-	virtual void Activate() override;
-
-protected:
-
-	UFUNCTION()
-	void ExecuteLogin() const;
-
-private:
-	
-	UPROPERTY()
-	UMGameInstance* GameInstance;
-
-	UPROPERTY()
-	FUserCredentials UserCredentials;
-
-	UPROPERTY()
-	bool bSuccessful;
-
-	UPROPERTY()
-	FString Error;
-
-	UPROPERTY()
-	FLoginResponse LoginResponse;
-};
+void UMGameInstance::SetDebugModeEnabled(const bool& bNewDebug)
+{
+	bDebugEnabled = bNewDebug;
+}

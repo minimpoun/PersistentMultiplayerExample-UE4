@@ -315,7 +315,6 @@ void UHttpAPI::UpdateActiveRequests()
  		{
  			UE_LOG(LogTemp, Warning, TEXT("The request %s failed with status %s"), *ActiveRequests[i]->GetRequestName().ToString(), *FString(EHttpRequestStatus::ToString(ActiveRequests[i]->GetStatus())));
  			ClearRequest(ActiveRequests[i]);
- 			continue;
  		}
  	}
 }
