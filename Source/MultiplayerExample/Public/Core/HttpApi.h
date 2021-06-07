@@ -343,6 +343,5 @@ FString UHttpAPI::FromStruct(const ContentType& FromStruct)
 		UE_LOG(LogTemp, Warning, TEXT("Failed to convert a struct into a string"));
 		return TEXT("");
 	}
-
 	return Out;
 }

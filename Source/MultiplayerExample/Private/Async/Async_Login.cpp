@@ -49,6 +49,7 @@ void UAsync_Login::Activate()
 			{
 				API->SetHeaders(Request);
 				API->POST<FUserCredentials>(Request, &UserCredentials);
+				
 				if (GameInstance->IsDebugMode())
 				{
 					API->DebugRequest(Request);

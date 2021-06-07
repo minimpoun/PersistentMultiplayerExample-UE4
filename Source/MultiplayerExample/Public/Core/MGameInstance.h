@@ -24,9 +24,59 @@
 
 #pragma once
 
+#include "GameplayTagContainer.h"
 #include "Engine/GameInstance.h"
 #include "Types/ApiTypes.h"
+#include "Types/GlobalTypes.h"
+
 #include "MGameInstance.generated.h"
+
+namespace MGameInstanceState
+{
+	/*
+	 *	This is a very basic example of how you could hand state changes for your game instance.
+	 *	This shouldn't be looked at as "the way" to do it, just a starting point.
+	 *	All of the state demonstrated are client side only
+	 *	However the state machine itself can handle both server side and client side states
+	 **/
+	
+	/*
+	*	Sends the player to the login menu if they are not already there.
+	**/
+	extern const FName STATE_Login;
+	
+	/*
+	*	Sends the player to the Character select screen and requests the character list
+	**/
+	extern const FName STATE_CharacterSelect;
+	
+	/*
+	*	Connects the player to the server and sets them up to begin play
+	**/
+	extern const FName STATE_Playing;
+
+	/*
+	 *	Disconnects the player from the server and updates their inventory with the backend before exiting the game
+	 **/
+	extern const FName STATE_Quit;
+
+	extern const FName STATE_None;
+
+	inline bool IsValidState(const FName& InState)
+	{
+		return InState == STATE_Login			||
+			   InState == STATE_CharacterSelect ||
+			   InState == STATE_Playing			|| 
+			   InState == STATE_Quit;
+	}
+}
+
+UENUM(BlueprintType)
+enum class EMenuMap : uint8
+{
+	Login,
+	CharacterSelect,
+};
 
 UCLASS()
 class UMGameInstance : public UGameInstance
@@ -41,18 +91,95 @@ public:
 	bool IsDebugMode() const;
 
 	UFUNCTION(BlueprintCallable)
-	void SetDebugModeEnabled(const bool& bNewDebug);
+	void SetDebugModeEnabled(const bool bNewDebug);
 	
 	UFUNCTION(BlueprintPure)
 	FORCEINLINE bool HasValidToken() const { return LoginToken.IsValid(); }
 
 	FORCEINLINE void SetNewToken(const FLoginResponse NewToken) { LoginToken = NewToken; }
 
+	UFUNCTION(BlueprintPure)
+	FORCEINLINE TArray<FCharacterData> GetCharacterList() const { return CharacterList; }
+
+	UFUNCTION(BlueprintPure)
+	FORCEINLINE FCharacterData GetCurrentCharacter() const { return CurrentCharacter; }
+
+	UFUNCTION(BlueprintCallable)
+	void LogoutAndReturnToMenu();
+
+	UFUNCTION(BlueprintPure)
+	FString GetMenuMap(const EMenuMap Map) const { return *MenuMaps.Find(Map); }
+
+	UFUNCTION(BlueprintPure)
+	bool IsInMenus() const;
+
+	/************************************************************************/
+	/* State Machine                                                        */
+	/************************************************************************/
+
+	UFUNCTION(BlueprintPure, Category = "State Machine")
+	FName GetCurrentState() const;
+
+	void GotoStateFast(FName State);
+
+	UFUNCTION(BlueprintCallable, Category = "State Machine", meta = (DisplayName="GotoState"))
+	void GotoStateSafe(FGameplayTag State);
+
+	UFUNCTION(BlueprintPure, Category = "State Machine")
+	FName GetInitialState() const;
+
+	void GotoInitialState();
+
+protected:
+
+	UPROPERTY(EditDefaultsOnly)
+	TMap<EMenuMap, FString> MenuMaps;
+
+	virtual void Init() override;
+
+	/************************************************************************/
+	/* State Machine                                                        */
+	/************************************************************************/
+
+	void ChangeState(FName State);
+
+	/*
+	*	Will end the current state and fire delegates so game code has a chance to handle any state-based clean-up BEFORE it ends
+	**/
+	void EndCurrentState();
+
+	void BeginNewState();
+	
+	void BeginLoginState();
+	void BeginCharacterSelectState();
+	void BeginPlayingState();
+	void BeginQuitState();
+	
+	void EndLoginScreenState();
+	void EndCharacterSelectState();
+	void EndPlayingState();
+	void EndQuitState();
+
 private:
 
 	UPROPERTY(Transient)
-	FLoginResponse LoginToken;
+	FCharacterData CurrentCharacter;
 
 	UPROPERTY(Transient)
+	TArray<FCharacterData> CharacterList;
+
+	UPROPERTY()
+	FLoginResponse LoginToken;
+
+	UPROPERTY(EditDefaultsOnly)
 	uint8 bDebugEnabled:1;
+
+	FName InitialState;
+
+	UPROPERTY(Transient)
+	FName CurrentState;
+	
+	UPROPERTY(Transient)
+	FName PendingState;
+	
 };
