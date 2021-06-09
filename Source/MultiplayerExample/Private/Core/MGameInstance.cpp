@@ -54,6 +54,11 @@ void UMGameInstance::SetDebugModeEnabled(const bool bNewDebug)
 	bDebugEnabled = bNewDebug;
 }
 
+void UMGameInstance::UpdateCharacterList(const FCharacterData& NewCharacter)
+{
+	CharacterList.Add(NewCharacter);
+}
+
 void UMGameInstance::LogoutAndReturnToMenu()
 {
 	

@@ -55,7 +55,7 @@ void UAsync_Login::Activate()
 					API->DebugRequest(Request);
 				}
 				
-				API->BindLambdaResponse(Request, [&](FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSuccess)
+				API->BindLambdaResponse(Request, [&](FHttpRequestPtr, FHttpResponsePtr Response, bool bSuccess)
 				{
 					if (API->ValidateResponse(Response))
 					{

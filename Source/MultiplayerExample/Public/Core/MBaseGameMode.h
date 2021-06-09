@@ -25,15 +25,17 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/GameModeBase.h"
+
+#include "GameFramework/GameMode.h"
 #include "MBaseGameMode.generated.h"
 
 UCLASS(minimalapi)
-class AMultiplayerExampleGameMode : public AGameModeBase
+class AMultiplayerExampleGameMode : public AGameMode
 {
 	GENERATED_BODY()
 
 public:
+	
 	AMultiplayerExampleGameMode();
 };
 

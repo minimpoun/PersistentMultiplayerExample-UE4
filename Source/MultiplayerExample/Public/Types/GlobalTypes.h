@@ -52,4 +52,23 @@ struct FCharacterData
 
 	UPROPERTY(BlueprintReadOnly)
 	TArray<FInventoryJson> Inventory;
+
+	UPROPERTY(BlueprintReadOnly)
+	FString ID;
+
+	FString ToString() const
+	{
+		FString Out, InventoryString;
+
+		for (auto Item: Inventory)
+		{
+			InventoryString += "ID: " + Item.ItemId + " : ";
+			InventoryString += "Count: " + FString::FromInt(Item.ItemCount) + "\n";
+		}
+		
+		Out += "Name: " + Name + " : ";
+		Out += "Level: " + FString::FromInt(Level) + " : ";
+		Out += "Inventory: " + InventoryString;
+		return Out;
+	}
 };

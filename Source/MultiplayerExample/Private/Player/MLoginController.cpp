@@ -24,13 +24,13 @@ void ALoginController::BeginPlay()
 
 	if (GI && LoginHUD && IsLocalController())
 	{
-		if (!GI->HasValidToken())
+		if (GI->HasValidToken())
 		{
-			LoginHUD->CreateMenuWidget<ULoginWidget>();
+			LoginHUD->CreateMenuWidget<UCharacterSelectWidget>();
 		}
 		else
 		{
-			LoginHUD->CreateMenuWidget<UCharacterSelectWidget>();
+			LoginHUD->CreateMenuWidget<ULoginWidget>();
 		}
 	}
 }

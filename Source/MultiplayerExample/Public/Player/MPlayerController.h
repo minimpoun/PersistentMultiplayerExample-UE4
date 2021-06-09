@@ -21,3 +21,28 @@
 * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 * SOFTWARE.
 **/
+
+#pragma once
+
+#include "CoreMinimal.h"
+#include "GameFramework/PlayerController.h"
+#include "Types/GlobalTypes.h"
+
+#include "MPlayerController.generated.h"
+
+UCLASS()
+class AMPlayerController : public APlayerController
+{
+	GENERATED_BODY()
+
+public:
+
+protected:
+
+	virtual void OnRep_PlayerState() override;
+
+private:
+
+	UFUNCTION()
+	void PushInventoryToUserInterface(const TArray<FInventoryJson>& Inventory);
+};

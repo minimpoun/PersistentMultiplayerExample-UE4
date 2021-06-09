@@ -97,7 +97,11 @@ public:
 	FORCEINLINE bool HasValidToken() const { return LoginToken.IsValid(); }
 
 	FORCEINLINE void SetNewToken(const FLoginResponse NewToken) { LoginToken = NewToken; }
+	FORCEINLINE const FLoginResponse& GetToken() const { return LoginToken; }
 
+	void UpdateCharacterList(const FCharacterData& NewCharacter);
+	FORCEINLINE void UpdateCharacterList(const TArray<FCharacterData>& NewList) { CharacterList = NewList; }
+	
 	UFUNCTION(BlueprintPure)
 	FORCEINLINE TArray<FCharacterData> GetCharacterList() const { return CharacterList; }
 

@@ -21,3 +21,38 @@
 * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 * SOFTWARE.
 **/
+
+#pragma once
+
+#include "CoreMinimal.h"
+#include "GameFramework/PlayerState.h"
+#include "Types/GlobalTypes.h"
+
+#include "MPlayerState.generated.h"
+
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnInventoryChanged, const TArray<FInventoryJson>&);
+
+UCLASS()
+class AMPlayerState : public APlayerState
+{
+	GENERATED_BODY()
+
+public:
+
+	UFUNCTION(BlueprintAuthorityOnly, BlueprintImplementableEvent)
+	void SyncPlayerState();
+
+	UFUNCTION(BlueprintCallable, Server, WithValidation, Reliable)
+	void Server_AddInventoryItem();
+
+	FOnInventoryChanged OnInventoryChanged;
+
+protected:
+	
+	UPROPERTY(ReplicatedUsing=OnRep_InventoryChanged)
+	TArray<FInventoryJson> Inventory;
+
+	UFUNCTION()
+	void OnRep_InventoryChanged();
+
+};

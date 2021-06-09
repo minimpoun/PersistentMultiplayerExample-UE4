@@ -75,8 +75,6 @@ class URequest : public UObject
 
 public:
 
-	URequest();
-	virtual ~URequest() override;
 	enum EVerb
 	{
 		POST,
@@ -177,9 +175,6 @@ public:
 
 	static void BindLambdaResponse(URequest* InRequest, TFunction<void(FHttpRequestPtr, FHttpResponsePtr, bool)> LambdaFunctor);
 
-	template<typename ClassType>
-	static void BindUFunctionResponse(URequest* InRequest, ClassType* InClass, const FName& FuncName);
-
 	template<typename ContentType>
 	void POST(URequest* InRequest, const ContentType& Payload);
 
@@ -249,17 +244,6 @@ private:
 	FTimerHandle RequestUpdate_TimerHandle;
 };
 
-
-template<typename ClassType>
-void UHttpAPI::BindUFunctionResponse(URequest* InRequest, ClassType* InClass, const FName& FuncName)
-{
-	if (InRequest && InClass)
-	{
-		InRequest->OnProcessRequestComplete().BindUFunction(InClass, FuncName);
-		InRequest->bResponseHandled = true;
-	}
-}
-
 template<typename ContentType>
 void UHttpAPI::POST(URequest* InRequest, const ContentType& Payload)
 {
@@ -284,6 +268,15 @@ void UHttpAPI::POST(URequest* InRequest, ContentType Payload)
 	if (InRequest)
 	{
 		POSTImpl(InRequest, FromStruct<ContentType>(Payload));
+	}
+}
+
+template<>
+inline void UHttpAPI::POST<FString>(URequest* InRequest, FString Payload)
+{
+	if (InRequest)
+	{
+		POSTImpl(InRequest, Payload);
 	}
 }
 

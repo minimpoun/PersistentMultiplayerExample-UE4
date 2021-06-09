@@ -105,7 +105,7 @@ void UHttpAPI::SetHeaders(URequest* InRequest) const
 	}
 }
 
-void UHttpAPI::SetHeaders(URequest* InRequest, EContentType ContentType)
+void UHttpAPI::SetHeaders(URequest* InRequest, const EContentType ContentType)
 {
 	if (InRequest)
 	{
@@ -169,7 +169,7 @@ bool UHttpAPI::ValidateResponse(FHttpResponsePtr Response)
 
 	if (!Response.IsValid())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("The response was invalid"));
+		UE_LOG(LogTemp, Error, TEXT("The response was invalid"));
 	}
 
 	if (Response->GetResponseCode() == EHttpResponseCodes::Denied)
@@ -188,7 +188,7 @@ bool UHttpAPI::ValidateResponse(FHttpResponsePtr Response)
 		bReturn = true;
 	}
 
-	UE_LOG(LogTemp, Warning, TEXT("Response finished with %d"), Response->GetResponseCode());
+	UE_LOG(LogTemp, Log, TEXT("Response finished with %d"), Response->GetResponseCode());
 	return bReturn;
 }
 
@@ -269,7 +269,7 @@ TArray<URequest*> UHttpAPI::FindRequest(const FName& RequestName)
 		
 		if (CheckName.Contains(TEXT("_")))
 		{
-			CheckName.LeftChop(CheckName.Find(TEXT("_")));
+			CheckName = CheckName.LeftChop(CheckName.Find(TEXT("_")));
 		}
 
 		if (FName(*CheckName) == RequestName)
@@ -286,7 +286,7 @@ bool UHttpAPI::RequestExists(const FName& RequestName)
 	for (const URequest* Element : ActiveRequests)
 	{
 		FString CheckName = Element->GetRequestName().ToString();
-		CheckName.LeftChop(CheckName.Find("_"));
+		CheckName = CheckName.LeftChop(CheckName.Find("_"));
 		if (FName(*CheckName) == RequestName)
 		{
 			return true;
@@ -356,14 +356,6 @@ FString UHttpAPI::GetContentType(EContentType C)
 	case EContentType::text:		return TEXT("text/plain");
 	default: return TEXT("bad content type");
 	}
-}
-
-URequest::URequest()
-{
-}
-
-URequest::~URequest()
-{
 }
 
 void URequest::SetRequestName(const FName& Name)

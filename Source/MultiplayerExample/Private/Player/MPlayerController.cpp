@@ -21,3 +21,26 @@
 * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 * SOFTWARE.
 **/
+
+#include "Player/MPlayerController.h"
+
+#include "Player/MPlayerState.h"
+#include "UserInterface/HUDs/MGameHUD.h"
+
+void AMPlayerController::OnRep_PlayerState()
+{
+	Super::OnRep_PlayerState();
+	
+	if (AMPlayerState* PS = GetPlayerState<AMPlayerState>())
+	{
+		PS->OnInventoryChanged.AddUObject(this, &ThisClass::PushInventoryToUserInterface);
+	}
+}
+
+void AMPlayerController::PushInventoryToUserInterface(const TArray<FInventoryJson>& Inventory)
+{
+	if (AGameHUD* GameHUD = GetHUD<AGameHUD>())
+	{
+		GameHUD->ReceiveInventory(Inventory);
+	}
+}

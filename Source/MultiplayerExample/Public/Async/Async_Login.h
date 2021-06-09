@@ -43,7 +43,7 @@ public:
 	UPROPERTY(BlueprintAssignable)
 	FOnLoginComplete OnLoginComplete;
 
-	UFUNCTION(BlueprintCallable, meta = (BlueprintInternalUseOnly = true))
+	UFUNCTION(BlueprintCallable, Category = "Multiplayer Example | Async API", meta = (BlueprintInternalUseOnly = true))
 	static UAsync_Login* WaitGoogleLogin(UMGameInstance* InGI, const FUserCredentials& InUserCredentials);
 
 	virtual void Activate() override;

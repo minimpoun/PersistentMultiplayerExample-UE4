@@ -21,3 +21,32 @@
 * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 * SOFTWARE.
 **/
+
+#include "Player/MPlayerState.h"
+#include "Net/UnrealNetwork.h"
+
+void AMPlayerState::Server_AddInventoryItem_Implementation()
+{
+	FInventoryJson NewItem;
+	NewItem.ItemCount = 1;
+	NewItem.ItemId = "pumpkin";
+
+	Inventory.Add(NewItem);
+}
+
+bool AMPlayerState::Server_AddInventoryItem_Validate()
+{
+	return true;
+}
+
+void AMPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(AMPlayerState, Inventory);
+}
+
+void AMPlayerState::OnRep_InventoryChanged()
+{
+	OnInventoryChanged.Broadcast(Inventory);
+}

@@ -24,7 +24,31 @@
 
 #pragma once
 
+#include "Types/GlobalTypes.h"
 #include "ApiTypes.generated.h"
+
+USTRUCT(BlueprintType)
+struct FUpdateInventoryRequest
+{
+	GENERATED_BODY()
+
+
+	UPROPERTY(BlueprintReadWrite)
+	FString id;
+
+	UPROPERTY(BlueprintReadWrite)
+	FInventoryJson NewItem;
+	
+};
+
+USTRUCT(BlueprintType)
+struct FDeleteCharacterRequest
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite)
+	FString id;
+};
 
 USTRUCT(BlueprintType)
 struct FLoginResponse
@@ -94,4 +118,16 @@ public:
 
 	UPROPERTY()
 	bool ReturnSecureToken = true;
+};
+
+USTRUCT(BlueprintType)
+struct FCreateCharacterRequest
+{
+	GENERATED_BODY()
+
+	FCreateCharacterRequest(){}
+	explicit FCreateCharacterRequest(const FString In) : Name(In) {}
+
+	UPROPERTY(BlueprintReadWrite)
+	FString Name;
 };

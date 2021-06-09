@@ -37,6 +37,6 @@ class UCharacterSelectWidget : public UUserWidget
 
 public:
 
-	UFUNCTION(BlueprintImplementableEvent)
+	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent)
 	void BuildCharacterList(const TArray<FCharacterData>& CharacterList);
 };
