@@ -16,9 +16,7 @@ public class MultiplayerExample : ModuleRules
                 "Json",
                 "JsonUtilities",
                 "OnlineSubsystemUtils",
-                "GameplayAbilities",
-                "GameplayTags",
-                "GameplayTasks"
+				"GameplayTags"
             });
         PrivateDependencyModuleNames.AddRange(new string[] { "HTTP", "UMG" });
     }

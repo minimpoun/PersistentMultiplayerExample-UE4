@@ -9,32 +9,11 @@
 			"Type": "Runtime",
 			"LoadingPhase": "Default",
 			"AdditionalDependencies": [
-				"Engine",
-				"GameplayAbilities"
+				"Engine"
 			]
 		}
 	],
 	"Plugins": [
-		{
-			"Name": "GameplayAbilities",
-			"Enabled": true
-		},
-		{
-			"Name": "CodeEditor",
-			"Enabled": true
-		},
-		{
-			"Name": "CodeView",
-			"Enabled": true
-		},
-		{
-			"Name": "Gauntlet",
-			"Enabled": true
-		},
-		{
-			"Name": "OnlineSubsystemSteam",
-			"Enabled": true
-		},
 		{
 			"Name": "SteamVR",
 			"Enabled": false,
@@ -43,10 +22,6 @@
 				"Win64",
 				"Linux"
 			]
-		},
-		{
-			"Name": "WebBrowserWidget",
-			"Enabled": true
 		}
 	]
 }

@@ -27,6 +27,8 @@
 #include "CoreMinimal.h"
 
 #include "GameFramework/GameMode.h"
+#include "Types/GlobalTypes.h"
+
 #include "MBaseGameMode.generated.h"
 
 UCLASS(minimalapi)
@@ -37,7 +39,27 @@ class AMultiplayerExampleGameMode : public AGameMode
 public:
 	
 	AMultiplayerExampleGameMode();
+
+protected:
+
+	virtual void PostLogin(APlayerController* NewPlayer) override;
+	virtual void PerformInitialSpawn(AController* Controller, FCharacterData Character);
+	virtual void HandleMatchHasStarted() override;
 };
 
+class FExampleGameModeEvents : public FGameModeEvents
+{
+public:
 
+	/**
+	* Client has finished logging into the backend services and has valid character data.
+	* They are ready to be spawned for the first time.
+	* 
+	* This is called whenever they connect to a new server
+	*/
+	DECLARE_EVENT_TwoParams(AMultiplayerExampleGameMode, FReadyToSpawnPlayer, AController*, FCharacterData);
+	
+	static FReadyToSpawnPlayer& OnReadyToSpawnPlayer() { return ReadyToSpawnPlayerEvent; }
+	static FReadyToSpawnPlayer ReadyToSpawnPlayerEvent;
+};
 

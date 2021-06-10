@@ -87,13 +87,13 @@ public:
 
 	UMGameInstance();
 
-	UFUNCTION(BlueprintPure)
+	UFUNCTION(BlueprintPure, Category = "Debug")
 	bool IsDebugMode() const;
 
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable, Category = "Debug")
 	void SetDebugModeEnabled(const bool bNewDebug);
 	
-	UFUNCTION(BlueprintPure)
+	UFUNCTION(BlueprintPure, Category = "Auth")
 	FORCEINLINE bool HasValidToken() const { return LoginToken.IsValid(); }
 
 	FORCEINLINE void SetNewToken(const FLoginResponse NewToken) { LoginToken = NewToken; }
@@ -102,11 +102,8 @@ public:
 	void UpdateCharacterList(const FCharacterData& NewCharacter);
 	FORCEINLINE void UpdateCharacterList(const TArray<FCharacterData>& NewList) { CharacterList = NewList; }
 	
-	UFUNCTION(BlueprintPure)
+	UFUNCTION(BlueprintPure, Category = "Character")
 	FORCEINLINE TArray<FCharacterData> GetCharacterList() const { return CharacterList; }
-
-	UFUNCTION(BlueprintPure)
-	FORCEINLINE FCharacterData GetCurrentCharacter() const { return CurrentCharacter; }
 
 	UFUNCTION(BlueprintCallable)
 	void LogoutAndReturnToMenu();
@@ -134,6 +131,14 @@ public:
 
 	void GotoInitialState();
 
+public:
+
+	/*
+	 *	The character ID the player wants to play. The server validates this ID when a login request happens
+	 **/
+	UPROPERTY(BlueprintReadOnly)
+	FString RequestedCharacter;
+
 protected:
 
 	UPROPERTY(EditDefaultsOnly)
@@ -156,18 +161,11 @@ protected:
 	
 	void BeginLoginState();
 	void BeginCharacterSelectState();
-	void BeginPlayingState();
-	void BeginQuitState();
 	
 	void EndLoginScreenState();
 	void EndCharacterSelectState();
-	void EndPlayingState();
-	void EndQuitState();
 
 private:
-
-	UPROPERTY(Transient)
-	FCharacterData CurrentCharacter;
 
 	UPROPERTY(Transient)
 	TArray<FCharacterData> CharacterList;

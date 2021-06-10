@@ -43,7 +43,23 @@ void AMPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(AMPlayerState, Inventory);
+	DOREPLIFETIME_CONDITION_NOTIFY(AMPlayerState, Inventory, COND_OwnerOnly, REPNOTIFY_Always);
+	DOREPLIFETIME_CONDITION_NOTIFY(AMPlayerState, CharacterData, COND_None, REPNOTIFY_Always);
+}
+
+void AMPlayerState::SetCharacterData(FCharacterData InData)
+{
+	if (GetLocalRole() < ROLE_Authority) return;
+	UE_LOG(LogTemp, Warning, TEXT("data: %s"), *InData.ToString());
+	CharacterData = InData;
+	Inventory = CharacterData.Inventory;
+	OnRep_CharacterData();
+}
+
+void AMPlayerState::OnRep_CharacterData()
+{
+	UE_LOG(LogTemp, Warning, TEXT("name: %s"), *CharacterData.Name);
+	SetPlayerName(CharacterData.Name);
 }
 
 void AMPlayerState::OnRep_InventoryChanged()

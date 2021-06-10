@@ -23,7 +23,6 @@
 **/
 
 #include "Core/MGameInstance.h"
-#include "AbilitySystemGlobals.h"
 
 namespace MGameInstanceState
 {
@@ -111,12 +110,6 @@ void UMGameInstance::Init()
 
 	CharacterList.Empty();
 	LoginToken = FLoginResponse();
-
-	UAbilitySystemGlobals& ASG = UAbilitySystemGlobals::Get();
-	if (!ASG.IsAbilitySystemGlobalsInitialized())
-	{
-		ASG.InitGlobalData();
-	}
 }
 
 void UMGameInstance::ChangeState(FName State)
@@ -136,10 +129,6 @@ void UMGameInstance::EndCurrentState()
 	{
 		EndCharacterSelectState();
 	}
-	else if (CurrentState == MGameInstanceState::STATE_Playing)
-	{
-		EndPlayingState();
-	}
 }
 
 void UMGameInstance::BeginNewState()
@@ -151,14 +140,6 @@ void UMGameInstance::BeginNewState()
 	else if (PendingState == MGameInstanceState::STATE_CharacterSelect)
 	{
 		BeginCharacterSelectState();
-	}
-	else if (PendingState == MGameInstanceState::STATE_Playing)
-	{
-		BeginPlayingState();
-	}
-	else if (PendingState == MGameInstanceState::STATE_Quit)
-	{
-		BeginQuitState();
 	}
 
 	CurrentState = PendingState;
@@ -185,7 +166,7 @@ void UMGameInstance::BeginLoginState()
 		}
 		else
 		{
-			UE_LOG(LogNet, Fatal, TEXT("%s -- Failed to get the games NetDriver--Couldn't client travel"), __func__);
+			UE_LOG(LogNet, Fatal, TEXT("Failed to get the games NetDriver--Couldn't client travel"));
 		}
 	}
 #endif
@@ -210,20 +191,6 @@ void UMGameInstance::BeginCharacterSelectState()
 #endif
 }
 
-void UMGameInstance::BeginPlayingState()
-{
-#if !UE_SERVER
-
-#endif
-}
-
-void UMGameInstance::BeginQuitState()
-{
-#if !UE_SERVER
-
-#endif
-}
-
 void UMGameInstance::EndLoginScreenState()
 {
 #if !UE_SERVER
@@ -232,20 +199,6 @@ void UMGameInstance::EndLoginScreenState()
 }
 
 void UMGameInstance::EndCharacterSelectState()
-{
-#if !UE_SERVER
-
-#endif
-}
-
-void UMGameInstance::EndPlayingState()
-{
-#if !UE_SERVER
-
-#endif
-}
-
-void UMGameInstance::EndQuitState()
 {
 #if !UE_SERVER
 

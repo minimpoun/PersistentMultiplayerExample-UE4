@@ -51,6 +51,19 @@ struct FDeleteCharacterRequest
 };
 
 USTRUCT(BlueprintType)
+struct FGetCharacterRequest
+{
+	GENERATED_BODY()
+
+	FGetCharacterRequest() {}
+	explicit FGetCharacterRequest(const FString& InID)
+		: id(InID) {}
+	
+	UPROPERTY(BlueprintReadOnly)
+	FString id;
+};
+
+USTRUCT(BlueprintType)
 struct FLoginResponse
 {
 	GENERATED_BODY()

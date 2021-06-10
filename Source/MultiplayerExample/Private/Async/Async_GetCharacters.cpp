@@ -43,7 +43,7 @@ void UAsync_GetCharacters::Activate()
 	{
 		if (UHttpAPI* API = Caller->GetGameInstance()->GetSubsystem<UHttpAPI>())
 		{
-			URequest* Request = API->CreateNewRequest("getAllCharacters");
+			URequest* Request = API->CreateNewRequest(TEXT("getAllCharacters"));
 			API->SetHeaders(Request);
 			API->SetAuthHeader(Request, Caller->GetGameInstance<UMGameInstance>()->GetToken().IdToken);
 			API->GET(Request);
@@ -55,6 +55,11 @@ void UAsync_GetCharacters::Activate()
 
 			UHttpAPI::BindLambdaResponse(Request, [&](FHttpRequestPtr, FHttpResponsePtr Response, bool)
 			{
+				if (Caller->GetGameInstance<UMGameInstance>()->IsDebugMode())
+				{
+					UHttpAPI::DebugResponse(Response);
+				}
+				
 				if (UHttpAPI::ValidateResponse(Response))
 				{
 					TArray<FCharacterData> CharacterList;
@@ -62,7 +67,7 @@ void UAsync_GetCharacters::Activate()
 					const TSharedRef<TJsonReader<TCHAR>> JsonReader = TJsonReaderFactory<TCHAR>::Create(Response->GetContentAsString());
 					if (FJsonSerializer::Deserialize(JsonReader, JsonObject) && JsonObject.IsValid())
 					{
-						const TArray<TSharedPtr<FJsonValue>> ObjArray = JsonObject->GetArrayField("data");
+						const TArray<TSharedPtr<FJsonValue>> ObjArray = JsonObject->GetArrayField(TEXT("data"));
 						FJsonObjectConverter::JsonArrayToUStruct(ObjArray, &CharacterList, 0, 0);
 					}
 

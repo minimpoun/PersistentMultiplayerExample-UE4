@@ -40,7 +40,7 @@ void UAsync_DeleteCharacter::Activate()
 #if !UE_SERVER
 	if (UHttpAPI* API = GI->GetSubsystem<UHttpAPI>())
 	{
-		URequest* Request = API->CreateNewRequest("deleteCharacter");
+		URequest* Request = API->CreateNewRequest(TEXT("deleteCharacter"));
 		API->SetHeaders(Request);
 		API->SetAuthHeader(Request, GI->GetToken().IdToken);
 		API->DELETE<FDeleteCharacterRequest>(Request, &DeleteCharacterRequest);
@@ -52,6 +52,11 @@ void UAsync_DeleteCharacter::Activate()
 
 		UHttpAPI::BindLambdaResponse(Request, [&](FHttpRequestPtr, FHttpResponsePtr Response, bool)
 		{
+			if (GI->IsDebugMode())
+			{
+				UHttpAPI::DebugResponse(Response);
+			}
+			
 			if (UHttpAPI::ValidateResponse(Response))
 			{
 				TArray<FCharacterData> CachedCharacterList = GI->GetCharacterList();

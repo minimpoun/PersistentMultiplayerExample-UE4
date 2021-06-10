@@ -25,12 +25,43 @@
 #pragma once
 
 #include "CoreMinimal.h"
+
+#include "Core/MGameInstance.h"
 #include "Kismet/BlueprintAsyncActionBase.h"
+#include "Types/GlobalTypes.h"
+
 #include "Async_GetCharacter.generated.h"
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnGetCharacterComplete, const FCharacterData&, CharacterData);
 
 UCLASS()
 class MULTIPLAYEREXAMPLE_API UAsync_GetCharacter : public UBlueprintAsyncActionBase
 {
 	GENERATED_BODY()
-	
+
+public:
+
+	UPROPERTY(BlueprintAssignable)
+	FOnGetCharacterComplete OnGetCharacterComplete;
+
+	UFUNCTION(BlueprintCallable, Category = "Multiplayer Example | Async API", meta = (BlueprintInternalUseOnly = true))
+	static UAsync_GetCharacter* WaitGetCharacter(UMGameInstance* GameInstance, FGetCharacterRequest InCharacterID, FString InBearerToken);
+
+	virtual void Activate() override;
+
+protected:
+
+	UFUNCTION()
+	void OnComplete(const FCharacterData& Character);
+
+private:
+
+	UPROPERTY()
+	UMGameInstance* GI;
+
+	UPROPERTY()
+	FGetCharacterRequest CharacterID;
+
+	UPROPERTY()
+	FString BearerToken;
 };

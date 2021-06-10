@@ -37,9 +37,21 @@ class AMPlayerController : public APlayerController
 
 public:
 
+	UFUNCTION(Client, Reliable)
+	void Client_OnConnectionComplete();
+
+	UFUNCTION(Client, Reliable)
+	void Client_DisconnectAndGotoLoginScreen();
+
+	UFUNCTION(Server, Reliable, WithValidation)
+	void Server_GetCharacter(const FString& CharacterID, const FString& BearerToken);
+
 protected:
 
 	virtual void OnRep_PlayerState() override;
+
+	UFUNCTION()
+	void OnGetCharacterCallback(const FCharacterData& CharacterData);
 
 private:
 

@@ -80,6 +80,16 @@ void AMultiplayerExampleCharacter::LookUpAtRate(float Rate)
 	AddControllerPitchInput(Rate * BaseLookUpRate * GetWorld()->GetDeltaSeconds());
 }
 
+void AMultiplayerExampleCharacter::BeginPlay()
+{
+	Super::BeginPlay();
+}
+
+void AMultiplayerExampleCharacter::SetPlayerDefaults()
+{
+	OnRep_PlayerState();
+}
+
 void AMultiplayerExampleCharacter::MoveForward(float Value)
 {
 	if ((Controller != nullptr) && (Value != 0.0f))

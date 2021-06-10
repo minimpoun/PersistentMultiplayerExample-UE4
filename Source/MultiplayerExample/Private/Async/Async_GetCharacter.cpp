@@ -24,3 +24,61 @@
 
 #include "Async/Async_GetCharacter.h"
 
+#include "Core/HttpApi.h"
+#include "Interfaces/IHttpResponse.h"
+
+UAsync_GetCharacter* UAsync_GetCharacter::WaitGetCharacter(UMGameInstance* GameInstance,
+                                                           FGetCharacterRequest InCharacterID, FString InBearerToken)
+{
+	auto* Node = NewObject<UAsync_GetCharacter>();
+	Node->GI = GameInstance;
+	Node->CharacterID = InCharacterID;
+	Node->BearerToken = InBearerToken;
+	return Node;
+}
+
+void UAsync_GetCharacter::Activate()
+{
+#if UE_SERVER || UE_EDITOR
+	if (UHttpAPI* API = GI->GetSubsystem<UHttpAPI>())
+	{
+		URequest* Request = API->CreateNewRequest(TEXT("getCharacter"));
+		API->SetHeaders(Request);
+		API->SetAuthHeader(Request, BearerToken);
+		API->POST<FGetCharacterRequest>(Request, &CharacterID);
+
+		if (GI->IsDebugMode())
+		{
+			UHttpAPI::DebugRequest(Request);
+		}
+
+		UHttpAPI::BindLambdaResponse(Request, [&](FHttpRequestPtr, FHttpResponsePtr Response, bool)
+		{
+			if (GI->IsDebugMode())
+			{
+				UHttpAPI::DebugResponse(Response);
+			}
+			
+			if (UHttpAPI::ValidateResponse(Response))
+			{
+				FCharacterData Character;
+				if (FJsonObjectConverter::JsonObjectStringToUStruct<FCharacterData>(Response->GetContentAsString(), &Character, 0, 0))
+				{
+					OnComplete(Character);
+					return;
+				}
+
+				UE_LOG(LogTemp, Error, TEXT("Failed to create a CharacterData struct from the json received from GetCharacter"));
+				OnComplete({});
+			}
+		});
+	}
+#else
+	OnComplete({});
+#endif
+}
+
+void UAsync_GetCharacter::OnComplete(const FCharacterData& Character)
+{
+	OnGetCharacterComplete.Broadcast(Character);
+}

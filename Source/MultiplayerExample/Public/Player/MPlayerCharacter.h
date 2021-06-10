@@ -52,6 +52,8 @@ public:
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 
+	virtual void SetPlayerDefaults() override;
+
 protected:
 	
 	void MoveForward(float Value);
@@ -60,6 +62,7 @@ protected:
 	void LookUpAtRate(float Rate);
 
 	// APawn interface
+	virtual void BeginPlay() override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	// End of APawn interface
 };

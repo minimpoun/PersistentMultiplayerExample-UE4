@@ -26,6 +26,7 @@
 
 #include "Core/HttpApi.h"
 #include "Core/MGameInstance.h"
+#include "Interfaces/IHttpResponse.h"
 
 UAsync_CreateCharacter* UAsync_CreateCharacter::WaitCreateCharacter(UMGameInstance* GameInstance, FCreateCharacterRequest CharacterName)
 {
@@ -40,7 +41,7 @@ void UAsync_CreateCharacter::Activate()
 #if !UE_SERVER
 	if (UHttpAPI* API = GI->GetSubsystem<UHttpAPI>())
 	{
-		URequest* Request = API->CreateNewRequest("createCharacter");
+		URequest* Request = API->CreateNewRequest(TEXT("createCharacter"));
 		API->SetHeaders(Request);
 		API->SetAuthHeader(Request, GI->GetToken().IdToken);
 		API->POST<FCreateCharacterRequest>(Request, &NewCharacter);
@@ -52,19 +53,28 @@ void UAsync_CreateCharacter::Activate()
 
 		UHttpAPI::BindLambdaResponse(Request, [&](FHttpRequestPtr, FHttpResponsePtr Response, bool)
 		{
+			if (GI->IsDebugMode())
+			{
+				UHttpAPI::DebugResponse(Response);
+			}
+			
 			if (UHttpAPI::ValidateResponse(Response))
 			{
 				FCharacterData NewChar;
-				NewChar.Name = NewCharacter.Name;
-				NewChar.Level = 1;
-				NewChar.Inventory.Empty();
-				GI->UpdateCharacterList(NewChar);
-				OnComplete(true, GI->GetCharacterList());
+				TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject);
+				const TSharedRef<TJsonReader<TCHAR>> JsonReader = TJsonReaderFactory<TCHAR>::Create(Response->GetContentAsString());
+				if (FJsonSerializer::Deserialize(JsonReader, JsonObject) && JsonObject.IsValid())
+				{
+					const TSharedPtr<FJsonObject> Obj = JsonObject->GetObjectField(TEXT("data"));
+					FJsonObjectConverter::JsonObjectToUStruct<FCharacterData>(Obj.ToSharedRef(), &NewChar, 0, 0);
+					UE_LOG(LogTemp, Warning, TEXT("%s"), *NewChar.ToString());
+					GI->UpdateCharacterList(NewChar);
+					OnComplete(true, GI->GetCharacterList());
+					return;
+				}
 			}
-			else
-			{
-				OnComplete(false, GI->GetCharacterList());
-			}
+
+			OnComplete(false, GI->GetCharacterList());
 		});
 	}
 #endif

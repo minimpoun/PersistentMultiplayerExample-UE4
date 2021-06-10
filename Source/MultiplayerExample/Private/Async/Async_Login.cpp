@@ -57,6 +57,11 @@ void UAsync_Login::Activate()
 				
 				API->BindLambdaResponse(Request, [&](FHttpRequestPtr, FHttpResponsePtr Response, bool bSuccess)
 				{
+					if (GameInstance->IsDebugMode())
+					{
+						UHttpAPI::DebugResponse(Response);
+					}
+					
 					if (API->ValidateResponse(Response))
 					{
 						FString Json = Response->GetContentAsString();

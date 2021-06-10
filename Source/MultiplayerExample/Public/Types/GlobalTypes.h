@@ -56,6 +56,8 @@ struct FCharacterData
 	UPROPERTY(BlueprintReadOnly)
 	FString ID;
 
+	bool IsValid() const { return !Name.IsEmpty() && !ID.IsEmpty(); }
+	
 	FString ToString() const
 	{
 		FString Out, InventoryString;

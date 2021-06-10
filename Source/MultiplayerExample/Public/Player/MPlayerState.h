@@ -47,6 +47,15 @@ public:
 
 	FOnInventoryChanged OnInventoryChanged;
 
+	void SetCharacterData(FCharacterData InData);
+	const FCharacterData& GetCharacterData() const { return CharacterData; }
+
+	UFUNCTION(BlueprintPure, meta = (DisplayName="GetCharacterData"))
+	FCharacterData K2_GetCharacterData() const { return CharacterData; }
+
+	UFUNCTION()
+	void OnRep_CharacterData();
+
 protected:
 	
 	UPROPERTY(ReplicatedUsing=OnRep_InventoryChanged)
@@ -55,4 +64,9 @@ protected:
 	UFUNCTION()
 	void OnRep_InventoryChanged();
 
+private:
+
+	UPROPERTY(ReplicatedUsing=OnRep_CharacterData)
+	FCharacterData CharacterData;
+	
 };

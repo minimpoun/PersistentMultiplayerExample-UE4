@@ -23,9 +23,194 @@
 **/
 
 #include "Core/MBaseGameMode.h"
+
+#include "GameFramework/CheatManager.h"
+#include "GameFramework/GameSession.h"
+#include "GameFramework/PlayerState.h"
+#include "Kismet/GameplayStatics.h"
 #include "Player/MPlayerCharacter.h"
-#include "UObject/ConstructorHelpers.h"
+#include "Player/MPlayerController.h"
+#include "Player/MPlayerState.h"
+
+FExampleGameModeEvents::FReadyToSpawnPlayer FExampleGameModeEvents::ReadyToSpawnPlayerEvent;
 
 AMultiplayerExampleGameMode::AMultiplayerExampleGameMode()
 {
+	bUseSeamlessTravel = false;
+	FExampleGameModeEvents::ReadyToSpawnPlayerEvent.AddUObject(this, &ThisClass::PerformInitialSpawn);
+}
+
+void AMultiplayerExampleGameMode::PostLogin(APlayerController* NewPlayer)
+{
+	// Super::PostLogin(NewPlayer);
+
+	UWorld* World = GetWorld();
+
+	auto* PC = Cast<AMPlayerController>(NewPlayer);
+	if (PC)
+	{
+		PC->Client_OnConnectionComplete();
+	}
+	else
+	{
+		return;
+	}
+
+	if (MustSpectate(NewPlayer))
+	{
+		NumSpectators++;
+	}
+	else if (World->IsInSeamlessTravel() || NewPlayer->HasClientLoadedCurrentWorld())
+	{
+		NumPlayers++;
+	}
+	else
+	{
+		NumTravellingPlayers++;
+	}
+
+	const FString Address = NewPlayer->GetPlayerNetworkAddress();
+	const int32 Pos = Address.Find(TEXT(":"), ESearchCase::CaseSensitive);
+	NewPlayer->PlayerState->SavedNetworkAddress = (Pos > 0) ? Address.Left(Pos) : Address;
+
+	FindInactivePlayer(NewPlayer);
+	GenericPlayerInitialization(NewPlayer);
+	NewPlayer->ClientCapBandwidth(NewPlayer->Player->CurrentNetSpeed);
+
+	if (MustSpectate(NewPlayer))
+	{
+		NewPlayer->ClientGotoState(NAME_Spectating);
+	}
+	else
+	{
+		const FUniqueNetIdRepl& ControllerStateUniqueId = NewPlayer->PlayerState->GetUniqueId();
+		if (ControllerStateUniqueId.IsValid())
+		{
+			GetGameInstance()->AddUserToReplay(ControllerStateUniqueId.ToString());
+		}
+	}
+
+	if (GameSession)
+	{
+		GameSession->PostLogin(NewPlayer);
+	}
+
+	K2_PostLogin(NewPlayer);
+	FGameModeEvents::GameModePostLoginEvent.Broadcast(this, NewPlayer);
+}
+
+void AMultiplayerExampleGameMode::PerformInitialSpawn(AController* Controller, FCharacterData Character)
+{
+	if (Controller->GetPawn())
+	{
+		return;
+	}
+	AMPlayerController* PC = CastChecked<AMPlayerController>(Controller);
+	UE_LOG(LogTemp, Warning, TEXT("got PC"));
+
+	if (Controller && !Controller->IsPendingKill())
+	{
+		if (!Character.IsValid())
+		{
+			PC->Client_DisconnectAndGotoLoginScreen();
+		}
+		UE_LOG(LogTemp, Warning, TEXT("character data valid"));
+
+		AActor* StartSpot = FindPlayerStart(Controller);
+		if (!StartSpot)
+		{
+			if (Controller->StartSpot.IsValid())
+			{
+				StartSpot = Controller->StartSpot.Get();
+				UE_LOG(LogGameMode, Warning, TEXT("PerformFirstPlayerSpawn: Player start not found, using last start spot"));
+			}
+		}
+		UE_LOG(LogTemp, Warning, TEXT("found player start "));
+
+		if (!StartSpot)
+		{
+			UE_LOG(LogGameMode, Error, TEXT("PerformFirstPlayerSpawn: Failed to find a player spot, aborting"));
+			PC->Client_DisconnectAndGotoLoginScreen();
+		}
+		UE_LOG(LogTemp, Warning, TEXT("valid start spot"));
+
+		const FRotator SpawnRotation = StartSpot->GetActorRotation();
+		UE_LOG(LogGameMode, Verbose, TEXT("RestartPlayerAtPlayerStart %s"), (Controller && Controller->PlayerState) ? *Controller->PlayerState->GetPlayerName() : TEXT("Unknown"));
+
+		APawn* Pawn = nullptr;
+		if (GetDefaultPawnClassForController(Controller))
+		{
+			Pawn = SpawnDefaultPawnFor(Controller, StartSpot);
+		}
+
+		if (Pawn)
+		{
+			Controller->SetPawn(Pawn);
+		}
+		UE_LOG(LogTemp, Warning, TEXT("set pawn"));
+		Controller->Possess(Pawn);
+
+		if (!Controller->GetPawn())
+		{
+			Controller->FailedToSpawnPawn();
+			PC->Client_DisconnectAndGotoLoginScreen();
+			return;
+		}
+		UE_LOG(LogTemp, Warning, TEXT("possessed pawn"));
+
+		Controller->ClientSetRotation(Controller->GetPawn()->GetActorRotation(), true);
+
+		FRotator NewControllerRot = SpawnRotation;
+		NewControllerRot.Roll = 0.f;
+		Controller->SetControlRotation(NewControllerRot);
+
+		if (AMPlayerState* PS = Controller->GetPlayerState<AMPlayerState>())
+		{
+			PS->SetCharacterData(Character);
+			PS->OnRep_CharacterData();
+			ChangeName(Controller, Character.Name, true);
+			UE_LOG(LogTemp, Warning, TEXT("set character data on PS"));
+		}
+		else
+		{
+			UE_LOG(LogGameMode, Error, TEXT("PerformFirstPlayerSpawn: Failed to cast to PlayerCharacter"));
+			Controller->FailedToSpawnPawn();
+			PC->Client_DisconnectAndGotoLoginScreen();
+			return;
+		}
+
+		SetPlayerDefaults(Pawn);
+		K2_OnRestartPlayer(Controller);
+		UE_LOG(LogTemp, Warning, TEXT("BP Restart "));
+	}
+}
+
+void AMultiplayerExampleGameMode::HandleMatchHasStarted()
+{
+	// Super::HandleMatchHasStarted();
+	
+	GameSession->HandleMatchHasStarted();
+
+	GEngine->BlockTillLevelStreamingCompleted(GetWorld());
+	GetWorldSettings()->NotifyBeginPlay();
+	GetWorldSettings()->NotifyMatchStarted();
+
+	const FString BugLocString = UGameplayStatics::ParseOption(OptionsString, TEXT("BugLoc"));
+	const FString BugRotString = UGameplayStatics::ParseOption(OptionsString, TEXT("BugRot"));
+	if (!BugLocString.IsEmpty() || !BugRotString.IsEmpty())
+	{
+		for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
+		{
+			APlayerController* PlayerController = Iterator->Get();
+			if (PlayerController && PlayerController->CheatManager != nullptr)
+			{
+				PlayerController->CheatManager->BugItGoString(BugLocString, BugRotString);
+			}
+		}
+	}
+
+	if (IsHandlingReplays() && GetGameInstance() != nullptr)
+	{
+		GetGameInstance()->StartRecordingReplay(GetWorld()->GetMapName(), GetWorld()->GetMapName());
+	}
 }

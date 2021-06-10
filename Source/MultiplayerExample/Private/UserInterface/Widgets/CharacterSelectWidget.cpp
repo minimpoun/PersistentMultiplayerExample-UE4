@@ -23,3 +23,34 @@
 **/
 
 #include "UserInterface/Widgets/CharacterSelectWidget.h"
+#include "Core/MGameInstance.h"
+
+void UCharacterSelectWidget::PlaySelectedCharacter(const FString& CharacterID, const bool bForceLocal)
+{
+	if (UMGameInstance* GI = GetGameInstance<UMGameInstance>())
+	{
+		GI->RequestedCharacter = CharacterID;
+
+		if (bForceLocal)
+		{
+			GetOwningPlayer()->ClientTravel(TEXT("127.0.0.1"), ETravelType::TRAVEL_Absolute, false);
+			return;
+		}
+		
+		FConfigFile GameConfig;
+		if (FConfigCacheIni::LoadLocalIniFile(GameConfig, TEXT("DefaultGame"), false))
+		{
+			FString TravelURL = "127.0.0.1";
+			if (!GameConfig.GetString(TEXT("ServerAddress"), TEXT("Address"), TravelURL))
+			{
+				UE_LOG(LogTemp, Error, TEXT("Failed to get the server address"));
+				return;
+			}
+
+			GetOwningPlayer()->ClientTravel(TravelURL, ETravelType::TRAVEL_Absolute, false);
+			return;
+		}
+	}
+
+	UE_LOG(LogTemp, Error, TEXT("Failed to travel to the server"));
+}

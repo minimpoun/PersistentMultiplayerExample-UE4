@@ -39,4 +39,7 @@ public:
 
 	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent)
 	void BuildCharacterList(const TArray<FCharacterData>& CharacterList);
+
+	UFUNCTION(BlueprintCallable)
+	void PlaySelectedCharacter(const FString& CharacterID, bool bForceLocal);
 };

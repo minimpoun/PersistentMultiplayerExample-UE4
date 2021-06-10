@@ -42,7 +42,7 @@ void UAsync_UpdateInventory::Activate()
 	UMGameInstance* GI = Controller->GetGameInstance<UMGameInstance>();
 	if (UHttpAPI* API = GI->GetSubsystem<UHttpAPI>())
 	{
-		URequest* Request = API->CreateNewRequest("updateInventory");
+		URequest* Request = API->CreateNewRequest(TEXT("updateInventory"));
 		API->SetHeaders(Request);
 		API->SetAuthHeader(Request, GI->GetToken().IdToken);
 		API->POST<FUpdateInventoryRequest>(Request, &UpdateInventoryRequest);
@@ -54,6 +54,11 @@ void UAsync_UpdateInventory::Activate()
 
 		UHttpAPI::BindLambdaResponse(Request, [&](FHttpRequestPtr, FHttpResponsePtr Response, bool)
 		{
+			if (GI->IsDebugMode())
+			{
+				UHttpAPI::DebugResponse(Response);
+			}
+			
 			if (UHttpAPI::ValidateResponse(Response))
 			{
 				
