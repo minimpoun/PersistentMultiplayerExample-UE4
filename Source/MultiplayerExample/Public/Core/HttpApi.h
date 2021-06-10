@@ -337,6 +337,5 @@ FString UHttpAPI::FromStruct(const ContentType& FromStruct)
 		return TEXT("");
 	}
 
-	UE_LOG(LogTemp, Error, TEXT("%s"), *Out);
 	return Out;
 }

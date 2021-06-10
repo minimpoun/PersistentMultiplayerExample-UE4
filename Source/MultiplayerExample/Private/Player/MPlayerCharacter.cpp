@@ -87,7 +87,6 @@ void AMultiplayerExampleCharacter::BeginPlay()
 
 void AMultiplayerExampleCharacter::SetPlayerDefaults()
 {
-	OnRep_PlayerState();
 }
 
 void AMultiplayerExampleCharacter::MoveForward(float Value)

@@ -45,6 +45,7 @@ protected:
 	virtual void PostLogin(APlayerController* NewPlayer) override;
 	virtual void PerformInitialSpawn(AController* Controller, FCharacterData Character);
 	virtual void HandleMatchHasStarted() override;
+	
 };
 
 class FExampleGameModeEvents : public FGameModeEvents

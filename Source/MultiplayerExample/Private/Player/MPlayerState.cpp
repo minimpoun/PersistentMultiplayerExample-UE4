@@ -23,15 +23,21 @@
 **/
 
 #include "Player/MPlayerState.h"
+
+#include "Async/Async_UpdateInventory.h"
 #include "Net/UnrealNetwork.h"
 
 void AMPlayerState::Server_AddInventoryItem_Implementation()
 {
-	FInventoryJson NewItem;
-	NewItem.ItemCount = 1;
-	NewItem.ItemId = "pumpkin";
+	FUpdateInventoryRequest Request;
+	Request.id = CharacterData.ID;
+	Request.NewItem.ItemCount = 1;
+	Request.NewItem.ItemId = "pumpkin";
 
-	Inventory.Add(NewItem);
+	UAsync_UpdateInventory* UpdateInventory = UAsync_UpdateInventory::WaitUpdateInventory(
+		Cast<AController>(GetOwner()), Request);
+	UpdateInventory->OnUpdateInventoryComplete.AddDynamic(this, &ThisClass::OnUpdatedInventory);
+	UpdateInventory->Activate();
 }
 
 bool AMPlayerState::Server_AddInventoryItem_Validate()
@@ -50,7 +56,6 @@ void AMPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 void AMPlayerState::SetCharacterData(FCharacterData InData)
 {
 	if (GetLocalRole() < ROLE_Authority) return;
-	UE_LOG(LogTemp, Warning, TEXT("data: %s"), *InData.ToString());
 	CharacterData = InData;
 	Inventory = CharacterData.Inventory;
 	OnRep_CharacterData();
@@ -58,11 +63,15 @@ void AMPlayerState::SetCharacterData(FCharacterData InData)
 
 void AMPlayerState::OnRep_CharacterData()
 {
-	UE_LOG(LogTemp, Warning, TEXT("name: %s"), *CharacterData.Name);
 	SetPlayerName(CharacterData.Name);
 }
 
 void AMPlayerState::OnRep_InventoryChanged()
 {
 	OnInventoryChanged.Broadcast(Inventory);
+}
+
+void AMPlayerState::OnUpdatedInventory(const TArray<FInventoryJson>& UpdatedInventory)
+{
+	Inventory = UpdatedInventory;
 }

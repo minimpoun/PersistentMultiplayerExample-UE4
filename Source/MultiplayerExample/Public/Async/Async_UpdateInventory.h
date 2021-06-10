@@ -32,7 +32,7 @@
 
 class AMPlayerController;
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnUpdateInventoryComplete, bool, bSuccessful);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnUpdateInventoryComplete, const TArray<FInventoryJson>&, Inv);
 
 UCLASS()
 class UAsync_UpdateInventory : public UBlueprintAsyncActionBase
@@ -45,14 +45,19 @@ public:
 	FOnUpdateInventoryComplete OnUpdateInventoryComplete;
 
 	UFUNCTION(BlueprintCallable, Category = "Multiplayer Example | Async API", meta = (BlueprintInternalUseOnly = true))
-	static UAsync_UpdateInventory* WaitUpdateInventory(AMPlayerController* Caller, const FUpdateInventoryRequest& NewItem);
+	static UAsync_UpdateInventory* WaitUpdateInventory(AController* Caller, const FUpdateInventoryRequest& NewItem);
 
 	virtual void Activate() override;
+
+protected:
+
+	UFUNCTION()
+	void OnComplete(const TArray<FInventoryJson> NewInventory);
 
 private:
 
 	UPROPERTY()
-	AMPlayerController* Controller;
+	AController* Controller;
 
 	UPROPERTY()
 	FUpdateInventoryRequest UpdateInventoryRequest;

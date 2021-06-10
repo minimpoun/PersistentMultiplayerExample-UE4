@@ -26,9 +26,11 @@
 
 #include "Core/HttpApi.h"
 #include "Core/MGameInstance.h"
+#include "Interfaces/IHttpResponse.h"
 #include "Player/MPlayerController.h"
+#include "Player/MPlayerState.h"
 
-UAsync_UpdateInventory* UAsync_UpdateInventory::WaitUpdateInventory(AMPlayerController* Caller, const FUpdateInventoryRequest& NewItem)
+UAsync_UpdateInventory* UAsync_UpdateInventory::WaitUpdateInventory(AController* Caller, const FUpdateInventoryRequest& NewItem)
 {
 	auto* Node = NewObject<UAsync_UpdateInventory>();
 	Node->Controller = Caller;
@@ -38,7 +40,7 @@ UAsync_UpdateInventory* UAsync_UpdateInventory::WaitUpdateInventory(AMPlayerCont
 
 void UAsync_UpdateInventory::Activate()
 {
-#if !UE_SERVER
+#if UE_SERVER || UE_EDITOR
 	UMGameInstance* GI = Controller->GetGameInstance<UMGameInstance>();
 	if (UHttpAPI* API = GI->GetSubsystem<UHttpAPI>())
 	{
@@ -58,12 +60,29 @@ void UAsync_UpdateInventory::Activate()
 			{
 				UHttpAPI::DebugResponse(Response);
 			}
-			
+
 			if (UHttpAPI::ValidateResponse(Response))
 			{
-				
+				TArray<FInventoryJson> Inventory;
+				TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject);
+				const TSharedRef<TJsonReader<TCHAR>> JsonReader = TJsonReaderFactory<TCHAR>::Create(Response->GetContentAsString());
+				if (FJsonSerializer::Deserialize(JsonReader, JsonObject) && JsonObject.IsValid())
+				{
+					const TArray<TSharedPtr<FJsonValue>> ObjArray = JsonObject->GetArrayField(TEXT("data"));
+					FJsonObjectConverter::JsonArrayToUStruct(ObjArray, &Inventory, 0, 0);
+				}
+
+				OnComplete(Inventory);
 			}
+
+			if (AMPlayerController* PC = Cast<AMPlayerController>(Controller))
+				OnComplete(PC->GetPlayerState<AMPlayerState>()->GetInventory());
 		});
 	}
 #endif
+}
+
+void UAsync_UpdateInventory::OnComplete(const TArray<FInventoryJson> NewInventory)
+{
+	OnUpdateInventoryComplete.Broadcast(NewInventory);
 }

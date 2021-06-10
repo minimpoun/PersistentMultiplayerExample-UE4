@@ -47,6 +47,8 @@ public:
 
 	FOnInventoryChanged OnInventoryChanged;
 
+	TArray<FInventoryJson> GetInventory() const { return Inventory; }
+
 	void SetCharacterData(FCharacterData InData);
 	const FCharacterData& GetCharacterData() const { return CharacterData; }
 
@@ -63,6 +65,9 @@ protected:
 
 	UFUNCTION()
 	void OnRep_InventoryChanged();
+
+	UFUNCTION()
+	void OnUpdatedInventory(const TArray<FInventoryJson>& UpdatedInventory);
 
 private:
 

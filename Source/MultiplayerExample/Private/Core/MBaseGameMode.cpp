@@ -24,6 +24,7 @@
 
 #include "Core/MBaseGameMode.h"
 
+#include "Async/Async_UpdateInventory.h"
 #include "GameFramework/CheatManager.h"
 #include "GameFramework/GameSession.h"
 #include "GameFramework/PlayerState.h"
@@ -106,7 +107,6 @@ void AMultiplayerExampleGameMode::PerformInitialSpawn(AController* Controller, F
 		return;
 	}
 	AMPlayerController* PC = CastChecked<AMPlayerController>(Controller);
-	UE_LOG(LogTemp, Warning, TEXT("got PC"));
 
 	if (Controller && !Controller->IsPendingKill())
 	{
@@ -114,7 +114,6 @@ void AMultiplayerExampleGameMode::PerformInitialSpawn(AController* Controller, F
 		{
 			PC->Client_DisconnectAndGotoLoginScreen();
 		}
-		UE_LOG(LogTemp, Warning, TEXT("character data valid"));
 
 		AActor* StartSpot = FindPlayerStart(Controller);
 		if (!StartSpot)
@@ -125,14 +124,12 @@ void AMultiplayerExampleGameMode::PerformInitialSpawn(AController* Controller, F
 				UE_LOG(LogGameMode, Warning, TEXT("PerformFirstPlayerSpawn: Player start not found, using last start spot"));
 			}
 		}
-		UE_LOG(LogTemp, Warning, TEXT("found player start "));
 
 		if (!StartSpot)
 		{
 			UE_LOG(LogGameMode, Error, TEXT("PerformFirstPlayerSpawn: Failed to find a player spot, aborting"));
 			PC->Client_DisconnectAndGotoLoginScreen();
 		}
-		UE_LOG(LogTemp, Warning, TEXT("valid start spot"));
 
 		const FRotator SpawnRotation = StartSpot->GetActorRotation();
 		UE_LOG(LogGameMode, Verbose, TEXT("RestartPlayerAtPlayerStart %s"), (Controller && Controller->PlayerState) ? *Controller->PlayerState->GetPlayerName() : TEXT("Unknown"));
@@ -147,7 +144,6 @@ void AMultiplayerExampleGameMode::PerformInitialSpawn(AController* Controller, F
 		{
 			Controller->SetPawn(Pawn);
 		}
-		UE_LOG(LogTemp, Warning, TEXT("set pawn"));
 		Controller->Possess(Pawn);
 
 		if (!Controller->GetPawn())
@@ -156,7 +152,6 @@ void AMultiplayerExampleGameMode::PerformInitialSpawn(AController* Controller, F
 			PC->Client_DisconnectAndGotoLoginScreen();
 			return;
 		}
-		UE_LOG(LogTemp, Warning, TEXT("possessed pawn"));
 
 		Controller->ClientSetRotation(Controller->GetPawn()->GetActorRotation(), true);
 
@@ -169,7 +164,6 @@ void AMultiplayerExampleGameMode::PerformInitialSpawn(AController* Controller, F
 			PS->SetCharacterData(Character);
 			PS->OnRep_CharacterData();
 			ChangeName(Controller, Character.Name, true);
-			UE_LOG(LogTemp, Warning, TEXT("set character data on PS"));
 		}
 		else
 		{
@@ -181,14 +175,11 @@ void AMultiplayerExampleGameMode::PerformInitialSpawn(AController* Controller, F
 
 		SetPlayerDefaults(Pawn);
 		K2_OnRestartPlayer(Controller);
-		UE_LOG(LogTemp, Warning, TEXT("BP Restart "));
 	}
 }
 
 void AMultiplayerExampleGameMode::HandleMatchHasStarted()
 {
-	// Super::HandleMatchHasStarted();
-	
 	GameSession->HandleMatchHasStarted();
 
 	GEngine->BlockTillLevelStreamingCompleted(GetWorld());
